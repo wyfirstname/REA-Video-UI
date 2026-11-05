@@ -26,7 +26,7 @@ async function capture(win) {
     return name;
   };
 
-  await sleep(1200);
+  await sleep(8000);
   await shot('01-work');
 
   await js(`window.__rvd.setStep(2); true`);

@@ -190,11 +190,17 @@ if (!app.requestSingleInstanceLock()) {
           bodyLen: document.body.innerHTML.length
         }))()`);
         const st = await require('./status').detect(true);
+        // 渲染层的环境状态要等 boot 异步链跑完，再等 6 秒看状态条有没有点亮
+        await new Promise((r) => setTimeout(r, 6000));
+        const pills = await mainWindow.webContents.executeJavaScript(
+          `Array.from(document.querySelectorAll('.pill')).map(p => p.dataset.k + ':' + p.className + ':' + p.textContent).join(' | ')`
+        );
         const report = {
           preload: checks.api,
           apiKeys: checks.apiKeys,
           title: checks.title,
           bodyLen: checks.bodyLen,
+          pills,
           engineReady: st.engineReady,
           python: st.python ? st.python.path + ' ' + (st.python.version || '') : null,
           deps: st.python ? st.python.depsComplete : false,
