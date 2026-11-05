@@ -1,0 +1,85 @@
+{
+  "name": "rea-video-desktop",
+  "productName": "REA Video Desktop",
+  "version": "1.0.0",
+  "description": "本地视频逆向拆解客户端：逐镜头判断实拍 / AI / 3D / 代码渲染，并给出复刻方案",
+  "main": "main/main.js",
+  "author": "REA Video Desktop",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/JuneYaooo/rea-video",
+  "scripts": {
+    "start": "electron .",
+    "sync:upstream": "node scripts/sync-upstream.mjs",
+    "icons": "python scripts/make-icon.py",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win nsis",
+    "dist:green": "node scripts/make-green.mjs",
+    "dist:all": "electron-builder --win nsis && node scripts/make-green.mjs",
+    "publish": "electron-builder --win nsis --publish always",
+    "selftest": "cross-env-shell RVD_SELFTEST=1 electron ."
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
+  },
+  "devDependencies": {
+    "electron": "38.8.6",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "app.reavideo.desktop",
+    "productName": "REA Video Desktop",
+    "copyright": "Third-party desktop shell for rea-video (Apache-2.0)",
+    "asar": true,
+    "compression": "maximum",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main/**/*",
+      "renderer/**/*",
+      "preload.js",
+      "package.json",
+      "!**/*.map",
+      "!**/node_modules/**/{test,__tests__,tests,example,examples,docs}/**"
+    ],
+    "extraResources": [
+      {
+        "from": "vendor/rea-video",
+        "to": "engine",
+        "filter": [
+          "**/*",
+          "!docs/cases/**",
+          "!**/__pycache__/**",
+          "!**/*.pyc"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "REA-Video-Desktop-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "shortcutName": "REA Video Desktop",
+      "artifactName": "REA-Video-Desktop-Setup-${version}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://github.com/JuneYaooo/rea-video-desktop/releases/latest/download"
+      }
+    ]
+  }
+}

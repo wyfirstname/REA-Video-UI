@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data: file:; style-src 'self' 'unsafe-inline'; script-src 'self'; media-src 'self' file:;"
+    />
+    <title>REA Video Desktop</title>
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- 左侧导航 -->
+      <aside class="rail">
+        <div class="brand">
+          <div class="brand-mark">REA</div>
+          <div class="brand-text">
+            <strong>Video Desktop</strong>
+            <span>逐镜逆向拆解</span>
+          </div>
+        </div>
+        <nav class="nav" id="nav">
+          <button class="nav-item active" data-page="work">
+            <span class="nav-dot"></span>拆解视频
+          </button>
+          <button class="nav-item" data-page="history"><span class="nav-dot"></span>历史记录</button>
+          <button class="nav-item" data-page="env"><span class="nav-dot"></span>运行环境</button>
+          <button class="nav-item" data-page="settings"><span class="nav-dot"></span>设置</button>
+          <button class="nav-item" data-page="about"><span class="nav-dot"></span>关于与更新</button>
+        </nav>
+        <div class="rail-foot">
+          <div id="railVersion">v-</div>
+          <div class="rail-hint">本地运行 · 只有文本与画面片段发给模型</div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <!-- 顶部状态条 -->
+        <header class="topbar">
+          <div class="pills" id="pills">
+            <span class="pill" data-k="python"><i></i>Python</span>
+            <span class="pill" data-k="deps"><i></i>依赖</span>
+            <span class="pill" data-k="ffmpeg"><i></i>FFmpeg</span>
+            <span class="pill" data-k="vlm"><i></i>VLM</span>
+            <span class="pill" data-k="engine"><i></i>引擎</span>
+          </div>
+          <div class="topbar-actions">
+            <button class="btn ghost sm" id="btnRefreshEnv">重新检测</button>
+          </div>
+        </header>
+
+        <!-- 页 1：拆解 -->
+        <section class="page active" id="page-work">
+          <div class="steps" id="steps">
+            <div class="step active" data-step="1"><b>1</b><span>选择视频</span></div>
+            <div class="step" data-step="2"><b>2</b><span>拆解选项</span></div>
+            <div class="step" data-step="3"><b>3</b><span>运行</span></div>
+            <div class="step" data-step="4"><b>4</b><span>结果</span></div>
+          </div>
+
+          <!-- 1 选择视频 -->
+          <div class="panel page-step active" data-step="1">
+            <div class="dropzone" id="dropzone">
+              <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 16V4m0 0l-4 4m4-4l4 4" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" />
+              </svg>
+              <div class="dz-title">把视频拖进来，或点击选择</div>
+              <div class="dz-sub">mp4 / mov / mkv / webm / avi … 建议 60 秒以内，先跑通再上长片</div>
+              <button class="btn" id="btnPickVideo">选择视频文件</button>
+            </div>
+
+            <div class="filecard hidden" id="filecard">
+              <div class="fc-main">
+                <div class="fc-name" id="fcName">-</div>
+                <div class="fc-path" id="fcPath">-</div>
+              </div>
+              <div class="fc-meta" id="fcMeta"></div>
+              <div class="fc-actions">
+                <button class="btn ghost sm" id="btnChangeVideo">换一个</button>
+                <button class="btn" id="btnToStep2">下一步</button>
+              </div>
+            </div>
+
+            <div class="hint-row">
+              <div class="hint">
+                <b>它做什么</b> 逐镜头判断每条画面是实拍、AI 生成、3D 渲染还是代码渲染，拆出字幕 / 花字 / 贴纸 / 运镜 / 剪辑节奏 / 声音来源，并给出复刻路线。
+              </div>
+              <div class="hint">
+                <b>数据去哪</b> 抽帧、切镜、OCR、音轨分离全部在本机完成。只有开启 VLM 时，才会把镜头片段和关键帧发给你自己配置的模型接口。
+              </div>
+            </div>
+          </div>
+
+          <!-- 2 选项 -->
+          <div class="panel page-step" data-step="2">
+            <div class="opt-grid">
+              <label class="opt">
+                <div class="opt-head">
+                  <span>多模态模型复核（VLM）</span>
+                  <input type="checkbox" id="optVlm" />
+                </div>
+                <div class="opt-desc" id="vlmDesc">开启后每个镜头会连同短片段一起发给模型看，实拍 / AI / 3D 分得更准，并反推提示词。</div>
+              </label>
+
+              <label class="opt">
+                <div class="opt-head">
+                  <span>剪辑包装层</span>
+                  <input type="checkbox" id="optPackaging" checked />
+                </div>
+                <div class="opt-desc">字幕时间轴、花字、贴纸、音效卡点。关掉能省掉约每分钟 30–50 秒。</div>
+              </label>
+
+              <label class="opt">
+                <div class="opt-head">
+                  <span>人声 / 配乐分离</span>
+                  <input type="checkbox" id="optStems" checked />
+                </div>
+                <div class="opt-desc" id="stemsDesc">分离出原声、干声、配乐三条轨，用来判断唱/说、BGM 来源。首次需要 67MB 模型。</div>
+              </label>
+
+              <label class="opt">
+                <div class="opt-head"><span>字幕 / 花字语言</span>
+                  <select id="optOcrLang">
+                    <option value="zh">中英（默认）</option>
+                    <option value="ja">日文</option>
+                  </select>
+                </div>
+                <div class="opt-desc">日文首次使用会额外下载约 10MB 识别模型。</div>
+              </label>
+
+              <label class="opt">
+                <div class="opt-head"><span>并行线程</span><input type="number" id="optWorkers" min="1" max="8" value="3" /></div>
+                <div class="opt-desc">VLM 并发数。国内接口建议 2–3，本地模型可以调高。</div>
+              </label>
+
+              <label class="opt">
+                <div class="opt-head"><span>复刻引擎（可选）</span><input type="text" id="optEngine" placeholder="seedance2.0" /></div>
+                <div class="opt-desc">复刻计划里默认使用的视频生成引擎，对应 capsule-cinema 的能力表。</div>
+              </label>
+            </div>
+
+            <div class="outrow">
+              <div class="outrow-label">输出目录</div>
+              <div class="outrow-path" id="outPath">-</div>
+              <button class="btn ghost sm" id="btnPickOut">更改</button>
+            </div>
+
+            <div class="row-end">
+              <button class="btn ghost" id="btnBack1">上一步</button>
+              <button class="btn primary" id="btnRun">开始拆解</button>
+            </div>
+          </div>
+
+          <!-- 3 运行 -->
+          <div class="panel page-step" data-step="3">
+            <div class="run-head">
+              <div>
+                <div class="run-title" id="runTitle">正在拆解…</div>
+                <div class="run-sub" id="runSub">-</div>
+              </div>
+              <button class="btn ghost sm danger" id="btnCancel">取消</button>
+            </div>
+            <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+            <div class="phases" id="phases"></div>
+            <div class="logbox"><pre id="logbox"></pre></div>
+          </div>
+
+          <!-- 4 结果 -->
+          <div class="panel page-step" data-step="4">
+            <div id="resultRoot"></div>
+          </div>
+        </section>
+
+        <!-- 页 2：历史 -->
+        <section class="page" id="page-history">
+          <div class="page-head">
+            <h2>历史记录</h2>
+            <button class="btn ghost sm" id="btnRefreshHistory">刷新</button>
+          </div>
+          <div id="historyList" class="history-list"></div>
+        </section>
+
+        <!-- 页 3：环境 -->
+        <section class="page" id="page-env">
+          <div class="page-head"><h2>运行环境</h2><button class="btn ghost sm" id="btnRecheck">重新检测</button></div>
+
+          <div class="env-card" id="envPython">
+            <div class="env-row">
+              <div class="env-name">Python 运行时</div>
+              <div class="env-state" id="pyState">检测中…</div>
+            </div>
+            <div class="env-detail" id="pyDetail"></div>
+            <div class="env-actions">
+              <select id="pySelect" class="grow"></select>
+              <button class="btn ghost sm" id="btnUsePython">使用该解释器</button>
+              <button class="btn sm" id="btnSetupEnv">安装 / 修复依赖</button>
+            </div>
+          </div>
+
+          <div class="env-card">
+            <div class="env-row">
+              <div class="env-name">FFmpeg</div>
+              <div class="env-state" id="ffState">检测中…</div>
+            </div>
+            <div class="env-detail" id="ffDetail"></div>
+            <div class="env-actions">
+              <button class="btn ghost sm" id="btnPickFfmpeg">指定目录…</button>
+              <button class="btn ghost sm" id="btnClearFfmpeg">用系统 PATH</button>
+            </div>
+          </div>
+
+          <div class="env-card">
+            <div class="env-row">
+              <div class="env-name">拆解引擎</div>
+              <div class="env-state" id="engState">检测中…</div>
+            </div>
+            <div class="env-detail" id="engDetail"></div>
+            <div class="env-actions">
+              <button class="btn ghost sm" id="btnCheckEngine">检查上游更新</button>
+              <button class="btn sm" id="btnUpdateEngine">更新到最新</button>
+              <button class="btn ghost sm" id="btnRestoreEngine">恢复内置版本</button>
+            </div>
+          </div>
+
+          <div class="env-card">
+            <div class="env-row">
+              <div class="env-name">人声分离模型</div>
+              <div class="env-state" id="mdState">检测中…</div>
+            </div>
+            <div class="env-detail" id="mdDetail">UVR MDX-Net Inst HQ 3 · 约 67MB · 只在开启音轨分离时使用</div>
+            <div class="env-actions"><button class="btn ghost sm" id="btnModel">下载模型</button></div>
+          </div>
+
+          <div class="logbox tall"><pre id="envLog"></pre></div>
+        </section>
+
+        <!-- 页 4：设置 -->
+        <section class="page" id="page-settings">
+          <div class="page-head"><h2>设置</h2><span class="muted" id="settingsSaved"></span></div>
+
+          <div class="card">
+            <div class="card-title">多模态模型（OpenAI 兼容）</div>
+            <div class="form">
+              <label><span>接口地址</span><input id="setBaseUrl" placeholder="https://api.openai.com/v1 或中转地址" /></label>
+              <label><span>API Key</span><input id="setKey" type="password" placeholder="留空表示不修改；只保存在本机（系统凭据加密）" /></label>
+              <label><span>模型名</span><input id="setModels" placeholder="gemini-2.5-pro,gpt-4o（逗号分隔做备选）" /></label>
+              <label><span>送什么给模型</span>
+                <select id="setMedia">
+                  <option value="both">视频片段 + 关键帧（最准，最贵）</option>
+                  <option value="frames">只送关键帧（最省）</option>
+                  <option value="video">只送视频片段</option>
+                </select>
+              </label>
+              <label><span>超时（秒）</span><input id="setTimeout" type="number" min="30" max="900" /></label>
+            </div>
+            <div class="card-foot">
+              <span class="muted" id="keyState"></span>
+              <button class="btn sm" id="btnSaveVlm">保存模型配置</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">运行与下载</div>
+            <div class="form">
+              <label><span>pip 镜像</span><input id="setPip" placeholder="https://pypi.tuna.tsinghua.edu.cn/simple" /></label>
+              <label><span>GitHub 加速前缀（可留空）</span><input id="setMirror" placeholder="https://gh-proxy.com/" /></label>
+              <label><span>输出目录</span>
+                <div class="inline"><input id="setOut" placeholder="默认在数据目录 output/" /><button class="btn ghost sm" id="btnPickOut2">选择</button></div>
+              </label>
+              <label class="checkline"><input type="checkbox" id="setOcr" /><span>安装依赖时一并安装 OCR（rapidocr，约 15MB）</span></label>
+            </div>
+            <div class="card-foot"><span class="muted">改动立即生效，保存后建议回「运行环境」重新检测一次</span><button class="btn sm" id="btnSaveRun">保存</button></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">升级</div>
+            <div class="form">
+              <label class="checkline"><input type="checkbox" id="setCheckStart" /><span>启动时检查客户端更新</span></label>
+              <label class="checkline"><input type="checkbox" id="setAutoDownload" /><span>发现新版本自动下载</span></label>
+              <label><span>更新源（generic feed）</span><input id="setFeed" placeholder="https://…/releases/latest/download" /></label>
+            </div>
+            <div class="card-foot"><span class="muted">引擎（拆解能力）的升级在「运行环境」页，两者独立</span><button class="btn sm" id="btnSaveUpdate">保存</button></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">数据位置</div>
+            <div class="kv" id="dataPaths"></div>
+            <div class="card-foot">
+              <span class="muted">绿色版把 data 放在程序目录；安装版在用户目录。设置环境变量 REA_VIDEO_DESKTOP_HOME 可改。</span>
+              <button class="btn ghost sm" id="btnOpenData">打开数据目录</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 页 5：关于 -->
+        <section class="page" id="page-about">
+          <div class="page-head"><h2>关于与更新</h2></div>
+
+          <div class="card">
+            <div class="about-row">
+              <div>
+                <div class="about-name">REA Video Desktop</div>
+                <div class="muted" id="aboutVer">-</div>
+              </div>
+              <div class="about-actions">
+                <button class="btn ghost sm" id="btnUpdCheck">检查客户端更新</button>
+                <button class="btn sm hidden" id="btnUpdDownload">下载更新</button>
+                <button class="btn primary sm hidden" id="btnUpdInstall">立即重启安装</button>
+              </div>
+            </div>
+            <div class="upd-state" id="updState">未检查</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">这个客户端是什么</div>
+            <p class="prose">
+              它把上游 <b>rea-video</b>（Apache-2.0）的命令行流水线包成桌面工具：探测本机 Python / FFmpeg，调度拆解任务，实时显示进度，最后打开
+              <code>report.html</code> 报告。所有拆解计算都在本机完成，不经过任何服务器。
+            </p>
+            <p class="prose">
+              客户端本身不包含模型权重。你配置的多模态模型只接收镜头片段与关键帧；密钥用系统凭据加密后存在本机。
+            </p>
+            <div class="links">
+              <button class="link" data-url="https://github.com/JuneYaooo/rea-video">上游项目 rea-video</button>
+              <button class="link" data-url="https://github.com/JuneYaooo/rea-video/blob/main/docs/cli.md">命令行文档</button>
+              <button class="link" data-url="https://github.com/JuneYaooo/rea-video/blob/main/docs/what-it-detects.md">能拆出什么</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">授权与致谢</div>
+            <p class="prose">
+              上游 rea-video 由 JuneYaooo 维护，Apache-2.0。本客户端是第三方壳，同样遵循 Apache-2.0 分发上游代码。请仅对你拥有或已获授权分析的视频使用。
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toasts" id="toasts"></div>
+    <script src="js/app.js"></script>
+  </body>
+</html>

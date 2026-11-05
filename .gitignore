@@ -1,0 +1,8 @@
+node_modules/
+dist/
+venv/
+.venv/
+vendor/rea-video/
+vendor/.cache/
+*.log
+.DS_Store
