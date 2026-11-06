@@ -16,6 +16,10 @@
 | 绿色包 `REA-Video-Desktop-x.y.z-green.zip` | 免安装 / 多机拷贝 | 解压即用，数据在程序目录 `data/`，不写系统盘 |
 | 源码 | 开发者 | `git clone` 后 `npm install && npm run sync:upstream && npm start` |
 
+**绿色包网盘下载**（国内直连更快，含已打好包的全部运行文件）：
+
+- 百度网盘：https://pan.baidu.com/s/199BGldGiGE4WPjg1Id0gIA?pwd=abde （提取码 `abde`）
+
 无论哪种方式都需要本机有：
 
 - **Python 3.10+**（官方安装包勾选 *Add python.exe to PATH*）。客户端会自动探测，并在「运行环境」页一键建独立 venv 装依赖，不污染系统 Python
